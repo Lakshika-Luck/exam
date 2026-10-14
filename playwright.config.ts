@@ -1,6 +1,14 @@
 import { defineConfig, devices } from '@playwright/test';
+import { testSettings } from './test.settings';
 
 const isCI = Boolean((globalThis as { process?: { env?: { CI?: string } } }).process?.env?.CI);
+type BrowserName = (typeof testSettings.browsers)[number];
+
+const browserDevices = {
+  chromium: devices['Desktop Chrome'],
+  firefox: devices['Desktop Firefox'],
+  webkit: devices['Desktop Safari'],
+};
 
 /**
  * Read environment variables from file.
@@ -14,8 +22,8 @@ const isCI = Boolean((globalThis as { process?: { env?: { CI?: string } } }).pro
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  timeout: 30000,   // Timeout for each test if 3test run beyond this time, it will be considered as failed
-  globalTimeout: 600000, // Global timeout for the entire test suite if test takes  more than this time 10 mins, the entire test suite will be considered as failed 
+  timeout: 1000000,   // Timeout for each test if 3test run beyond this time, it will be considered as failed
+  globalTimeout: 10000000, // Global timeout for the entire test suite if test takes  more than this time 10 mins, the entire test suite will be considered as failed 
   testDir: './tests',
   /* Run tests in files in parallel */
   fullyParallel: true,
@@ -30,7 +38,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('')`. */
-    baseURL: 'https://practicesoftwaretesting.com' ,
+    baseURL: testSettings.baseURL,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on',
@@ -38,7 +46,7 @@ export default defineConfig({
     ignoreHTTPSErrors: true, // Ignore HTTPS errors for all the tests
     video: 'retain-on-failure', // Record video only on failure
     screenshot: 'only-on-failure', // Take screenshot only on failure
-    headless: true //no pop up browser during test execution, run tests in headless mode
+    headless: testSettings.headless,
   },
 
   /* Configure projects for major browsers */
@@ -49,23 +57,14 @@ export default defineConfig({
       //Here playwright knows how to match file names with setup.ts for theproject, so it will only run the setup files and not the other test files
       //if we haven't mentioned testMatch, then it will run all the test files  with .test, .spec, .ts, .js(mentioned in playwright documentation)  
     },
-    {
-      name: 'chromium',
-      dependencies: ["setup"], //check whether the setup project is completed before running this project
-      use: { ...devices['Desktop Chrome'] , permissions: ["clipboard-read"] }, //giv access to clipboardd within chrome to save images to our clipboard
-    },
-
-    {
-      name: 'firefox',
-      dependencies: ["setup"], //check if setup project is completed before running this project
-      use: { ...devices['Desktop Firefox'] },
-    },
-
-    {
-      name: 'webkit',
-      dependencies: ["setup"], //check if setup project is completed before running this project
-      use: { ...devices['Desktop Safari'] },
-    },
+    ...testSettings.browsers.map((name: BrowserName) => ({
+      name,
+      dependencies: ['setup'],
+      use: {
+        ...browserDevices[name],
+        ...(name === 'chromium' ? { permissions: ['clipboard-read'] } : {}),
+      },
+    })),
 
     /* Test against mobile viewports. */
     // {

@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "npx playwright test", 
-    "test:headed": "npx playwright test --headed", 
+    "test:headless": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
     "test:chromium": "npx playwright test --project=chromium", 
     "test:first": "npx playwright test --grep@first", 
-    "test:local": "BASE_URL=http://localhost:4200 npx playwright test", 
     "test:firefox": "npx playwright test --project=firefox", 
     "test:webkit": "npx playwright test --project=webkit",
     "test:debug": "npx playwright test --debug",
